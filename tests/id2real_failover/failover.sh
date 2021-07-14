@@ -6,6 +6,7 @@ source config.sh
 # Cycle healthcheck continuously with specified delay
 while sleep "$CHECK_DELAY"
 do
+	echo "Current interface : `current_main_interface`"
 	# If healthcheck succeeds from primary interface
 	if ping -I "$PRIMARY_IF_ADDR" -c1 "$CHECK_IP" &>/dev/null; then
 		echo "Ping OK on primary interface"
