@@ -2,16 +2,16 @@
 CHECK_DELAY="5"
 CHECK_IP="1.1.1.1"
 
-NETWORK="10.10.10.0/24"
+NETWORK="192.168.1.0/24"
 
 PRIMARY_IF="eth0"
-PRIMARY_IF_ADDR="10.10.10.1"
-PRIMARY_GW="10.10.10.254"
+PRIMARY_IF_ADDR="192.168.1.1"
+PRIMARY_GW="192.168.1.254"
 ISP1_TABLE="R1"
 
-BACKUP_IF="eth1"
-BACKUP_IF_ADDR="10.10.10.2"
-BACKUP_GW="10.10.10.254"
+BACKUP_IF="eth4"
+BACKUP_IF_ADDR="192.168.1.2"
+BACKUP_GW="192.168.1.254"
 ISP2_TABLE="R2"
 
 function current_main_interface { ip route  | grep "metric 100" | sed -rn "s/^.*dev ([^ ]*).*$/\1/p"; }
