@@ -5,14 +5,14 @@ After=network.target auditd.service
 
 [Service]
 WorkingDirectory=/etc/id2real_failover
-ExecStartPre=/etc/id2real_failover/setup.sh
-ExecStart=/etc/id2real_failover/failover.sh
+ExecStartPre=/etc/id2real_failover/setup.py
+ExecStart=/usr/bin/python3 -u /etc/id2real_failover/failover.py
 Restart=on-failure
 ###
 #ExecStopPost=/etc/id2real_failover/teardown.sh
 #ExecReload=/bin/kill -1 -- $MAINPID
-ExecStop=/etc/id2real_failover/teardown.sh && /bin/kill -- $MAINPID
-ExecReload=/etc/id2real_failover/teardown.sh && /bin/kill -- $MAINPID
+ExecStop=/etc/id2real_failover/teardown.py && /bin/kill -- $MAINPID
+ExecReload=/etc/id2real_failover/teardown.py && /bin/kill -- $MAINPID
 #TimeoutStopSec=5
 #KillMode=process
 Type=simple
