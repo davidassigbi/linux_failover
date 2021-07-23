@@ -1,52 +1,40 @@
-#!/usr/bin/env python3
-import collections
-from subprocess import run
+#!/usr/bin/env python3.9
 import time
-from typing import TypeVar
 from config import *
-import pythonping
-
-class TestResult:
-    result: bool = False
-    def __init__(self, result: bool):
-        self.result = result
-
-def ping(target: str = "1.1.1.1") -> TestResult:
-    response_list = pythonping.ping(target, verbose=False, timeout=1, count=1, df=True)
-    return TestResult(response_list.success())
-
-def _ping(interface: str = "1.1.1.1") -> TestResult:
-    res = run(f"ping -c1 -I {interface} {CHECK_IP}", **DEFAULT_SHELL_OPTIONS)
-    return TestResult(res.returncode == 0)
-
-result_set = {
-    PRIMARY_IF: collections.deque([], maxlen=50),
-    BACKUP_IF: collections.deque([], maxlen=50)
-}
+from utils import *
 
 
-def last(iterable: list):
-    return iterable[-1]
+def main():
+    # Cycle healthcheck continuously with specified delay
+    while True:
+        time.sleep(CHECK_DELAY)
+        current_interface = current_main_interface()
+        
+        # Check for sticky provider 
+        try :
+            provider_index = sticky_provider_index()
+            if provider_index >= 0:
+                if providers[provider_index].interface_name != current_interface:
+                    print(f"Forcing {providers[provider_index]=} as main provider")
+                    switch_provider(providers[provider_index])
+                continue
+        except Exception as e:
+            print(f"{e=}")
 
-# Cycle healthcheck continuously with specified delay
-while True :
-	time.sleep(CHECK_DELAY)
-	result_set[PRIMARY_IF].append(ping(PRIMARY_IF_ADDR).result)
-	result_set[BACKUP_IF].append(ping(BACKUP_IF_ADDR).result)
- 	# If healthcheck succeeds from primary interface
-	if last(result_set(PRIMARY_IF)) == True:
-		print("Ping OK on primary interface")
-		# Are we using the backup?
-		if current_main_interface() == BACKUP_IF:
-			# Switch to primary
-			print(f"Switching to primary: {PRIMARY_IF}")
-			delete_default_routes()
-			switch_to_primary_interface()
-	else:
-		print("Ping NOT OK on primary interface")
-		# Are we using the primary?
-		if current_main_interface() == PRIMARY_IF and last(result_set[BACKUP_IF]) == True:
-		# Switch to backup
-			print(f"Switching to backup: {BACKUP_IF}")
-			delete_default_routes()
-			switch_to_backup_interface()
+        # Run provider tests
+        for p in providers:
+            test_result: list[bool] = []
+            for test in test_cases:
+                test_result.append(test.run_test(p).result)
+            result_set[p.interface_name].append(all(test_result))
+            
+        
+        # Get the interface that base on previous result we should be on
+        normal_current_provider = next_reliabale_provider()
+        print(f"{result_set=}, {current_interface=}, {normal_current_provider=}")
+        # If we're actually not on that interface then euuuuuh, switch on it
+        if normal_current_provider.interface_name != current_interface:
+            switch_provider(normal_current_provider)
+
+if __name__ == "__main__":
+    main()
