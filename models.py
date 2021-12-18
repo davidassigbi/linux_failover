@@ -1,8 +1,14 @@
 #!/usr/bin/env python3.9
-from abc import ABC, abstractmethod
-import abc
+import collections
 from dataclasses import dataclass
+from enum import Enum
+from typing import TypeVar
 from icmplib import ping
+
+
+T = TypeVar("T")
+ProvidersTestResultMap = dict[str, collections.deque[bool]]
+
 
 @dataclass
 class Provider:
@@ -12,13 +18,10 @@ class Provider:
     network: str = "10.10.10.0/24"
     rt_table_name: str = "R1"
     rt_table_id: int = 1
-    failed_checks_count: int = 0
-    consecutive_failed_checks_count: int = 0
-    consecutive_succeeded_checks: int = 0
     
     @property
     def id(self):
-        return self.rt_table_name
+        return self.interface_name
 
 
 @dataclass
@@ -26,16 +29,10 @@ class TestResult:
     result: bool = False
 
 
-class TestScenario(abc.ABC):
-    @abstractmethod
+class TestScenario():
     def run_test(p: Provider) -> TestResult:
         raise NotImplementedError()
     
-
-class ConnectionStateChangeHandler:
-    def handle(p: Provider, status):
-        raise NotImplementedError()
-
 
 @dataclass
 class TestScenarioPing(TestScenario):
@@ -52,5 +49,3 @@ class TestScenarioDig(TestScenario):
     target: str
     def run_test(p: Provider) -> TestResult:
         return super().run_test()
-
-

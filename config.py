@@ -2,14 +2,14 @@
 import collections
 from models import *
 
-CHECK_DELAY = 5
+CHECK_INTERVAL = 5
 START_METRIC = 100
+MAX_STORED_TEST_RESULT_COUNT = 50
 DEFAULT_SHELL_OPTIONS = {"shell": True,
                          "text": True, "close_fds": True, "timeout": 5}
 
-MAX_FAILED_CHECKS = 0
-MAX_CONSCUTIVE_FAILED_CHECKS = 0
-MIN_CONSCUTIVE_SUCCEEDED_CHECKS = 0
+MIN_FAILED_CHECKS = 0
+MIN_CONSCUTIVE_SUCCEEDED_CHECKS = 1
 STICKY_PROVIDER_FILENAME = "sticky.provider"
 
 providers: list[Provider] = [
@@ -19,10 +19,12 @@ providers: list[Provider] = [
              network="10.10.10.0/24", gateway="10.10.10.254", rt_table_name="R2", rt_table_id=2)
 ]
 
-result_set: dict[str, collections.deque[bool]] = {
-    p.interface_name: collections.deque([], maxlen=50) for p in providers}
-
 test_cases: list[TestScenario] = [
     TestScenarioPing("8.8.8.8"),
     TestScenarioPing("1.1.1.1")
 ]
+
+
+# Internal variables
+result_set: ProvidersTestResultMap = {
+    p.id: collections.deque([], maxlen=MAX_STORED_TEST_RESULT_COUNT) for p in providers}

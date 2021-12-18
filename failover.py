@@ -1,40 +1,40 @@
 #!/usr/bin/env python3.9
 import time
-from config import *
+
+from config import CHECK_INTERVAL
 from utils import *
 
 
 def main():
+    """Cycle continuously and perform failover tasks by checking for sticky provider, running checks, making sure base provider is used"""
+    
     # Cycle healthcheck continuously with specified delay
     while True:
-        time.sleep(CHECK_DELAY)
-        current_interface = current_main_interface()
+        time.sleep(CHECK_INTERVAL)
+        
+        # Retrieve the id of the provider in use
+        current_provider_id = current_main_provider_id()
         
         # Check for sticky provider 
         try :
-            provider_index = sticky_provider_index()
-            if provider_index >= 0:
-                if providers[provider_index].interface_name != current_interface:
-                    print(f"Forcing {providers[provider_index]=} as main provider")
-                    switch_provider(providers[provider_index])
+            provider_id = sticky_provider_id()
+
+            # Make sure there is actually a provider inside the file by check the returned value length
+            if len(provider_id) > 0:
+                # Check if the current provider is not already the sticky one to avoid performing useless operations
+                if provider_id != current_provider_id:
+                    sticky_provider = get_provider_by_id(provider_id)
+                    switch_provider(sticky_provider)
+                    print(f"Forcing {sticky_provider=} as main provider")
+                
+                # Skip the remaining code as we explicitly want to use this provider
                 continue
         except Exception as e:
             print(f"{e=}")
 
-        # Run provider tests
-        for p in providers:
-            test_result: list[bool] = []
-            for test in test_cases:
-                test_result.append(test.run_test(p).result)
-            result_set[p.interface_name].append(all(test_result))
+        run_provider_reliability_tests()
             
-        
-        # Get the interface that base on previous result we should be on
-        normal_current_provider = next_reliabale_provider()
-        print(f"{result_set=}, {current_interface=}, {normal_current_provider=}")
-        # If we're actually not on that interface then euuuuuh, switch on it
-        if normal_current_provider.interface_name != current_interface:
-            switch_provider(normal_current_provider)
+        enforce_best_provider_use(current_provider_id)
 
 if __name__ == "__main__":
     main()

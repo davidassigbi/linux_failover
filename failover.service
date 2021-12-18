@@ -4,6 +4,7 @@ Description=Id2real failover service
 After=network.target auditd.service
 
 [Service]
+# /home/david/miniconda3/envs/python-3.9/bin/python 
 WorkingDirectory=/etc/id2real_failover
 ExecStartPre=/usr/bin/env python3.9 -u /etc/id2real_failover/setup.py
 ExecStart=/usr/bin/env python3.9 -u /etc/id2real_failover/failover.py
