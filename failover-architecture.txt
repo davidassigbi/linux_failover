@@ -1,14 +1,31 @@
-                                                        +-------------+
-                                                        | TogoTelecom |
-                          +-----------------------+     | 10.10.1.254 |
-                          |                   eth0+---->+-------------+
-           +--------------+eth2   firebird        |
-           |              |                   eth1+---->+-------------+
-           |              +-----------------------+     |   Canalbox  |
-           |                                            | 10.10.1.254 |
-           |                                            +-------------+
+                                                        +--------------+
+                                                        |     Free     |
+                          +-----------------------+     | 10.10.10.254 |
+                          |                   eth1+---->+--------------+
+           +--------------+eth3   firewall        |
+           |              |                   eth2+---->+--------------+
+           |              +-----------------------+     |    Orange    |
+           |                                            | 10.10.10.254 |
+           |                                            +--------------+
   +--------+-----------+
   |  Private Network   |--------> PC 1
   |                    |
-  |    10.10.3.0/24    |--------> PC 2
+  |   192.168.0.0/24   |--------> PC 2
   +--------------------+
+
+
+- First boot up the whole system and then show:
+    - The firewall vm is connected to both isp1 and isp2
+    - The host1 can ping internet going through the firewall
+    - The firewall has only one main default route (isp1)
+    - Then disconnect isp1 of internet and show that host1 also lost internet connection
+    - Then manually switch the firewall default route over to isp2
+    - Show that host1 recovered internet
+    - Then disconnect isp2 from internet and show that once again host1 lost connection 
+    - Now give internet connection to isp1
+    - host1 should still not have internet connection and for it to have we have to manually switch routes on firewall.
+    What if we can have a tool to automatically do that for us ?
+    
+    - Now launch firewall provisionning with the failover script, maybe talk about what is going on in this
+    - And now run journalctl -f -u failover.service to show the service output
+    - Now perform all the disconncetion and connection tests again and show how the script automatically performs the switching ensuring almost permanent connectivity

@@ -14,11 +14,11 @@ def get_provider_by_id(id: str) -> Provider:
     matches = list(filter(lambda p: p.id == id, config.providers))
     if len(matches) > 0:
         return matches[0]
-    raise LookupError(f"Unable to find a provider for with: id {id}")
+    raise LookupError(f"Unable to find a provider with: id {id}")
 
 
 def current_main_provider_id() -> str:
-    """Retrieve the provider currently in use"""
+    """Retrieve the provider currently having the highest priority/lowest metric"""
 
     cmd = f'ip route | grep "metric {config.START_METRIC}" | sed -rn "s/^.*dev ([^ ]*) src ([^ ]*).*$/\\1 \\2/p"'
     matching_providers: list[Provider]
@@ -30,16 +30,10 @@ def current_main_provider_id() -> str:
     # Use interface name and ip address to find provider
     matching_providers = list(filter(lambda p: p.interface_name ==
                               interface_name and p.ipv4_address == ipv4_address, config.providers))
-    print(f"{cmd=} {matching_providers=}")
+    # print(f"{cmd=} {matching_providers=}")
 
     # Make sure a single provider matched with the interface name and ip address
-    main_provider: Provider
-    if len(matching_providers) == 1:
-        main_provider = matching_providers[0]
-    else:
-        main_provider = config.providers[0]
-
-    return main_provider.id
+    return matching_providers[0].id if len(matching_providers) == 1 else config.providers[0].id
 
 
 def delete_default_routes() -> None:
@@ -54,7 +48,7 @@ def delete_default_routes() -> None:
             **config.DEFAULT_SHELL_OPTIONS
         ).stdout.strip()
     )
-    print(f"{cmd} = {default_routes_count}")
+    # print(f"{cmd} = {default_routes_count}")
 
     # Actually loop and delete all the default routes
     for_each(range(0, default_routes_count), lambda _: run(
@@ -62,23 +56,23 @@ def delete_default_routes() -> None:
 
 
 def add_default_route(interface_name: str, gateway_address: str, ipv4_address: str, metric: int):
-    """Add a default route to the main routing table based on passed arguments"""
+    """Add a default route to the main routing table based on function parameters"""
     cmd = f"ip route add default via {gateway_address} dev {interface_name} src {ipv4_address} metric {metric}"
-    print(f"{cmd=}")
+    # print(f"{cmd=}")
     run(cmd, **config.DEFAULT_SHELL_OPTIONS)
 
 
-def set_main_provider(provider_id: str = "togocom"):
-    """Sets the provider with the id passed to be the one which route has the highest metrics"""
+def set_main_provider(provider_id: str = "eth1"):
+    """Sets the provider with the id passed to be the one which route has the highest priority (lowest metric)"""
 
-    print(f"Setting {provider_id} as main interface")
+    print(f"Setting '{provider_id}' as main provider.")
     
-    # Reorder providers list so that the first provider is the one with the id received as argument
+    # Reorder providers list so that the first element is the provider with the id received as argument
     reordered_providers_list = sorted(
         config.providers, key=lambda p: p.id == provider_id, reverse=True)
 
-    # Decrease the strart metric so as to increase it as we go loop through the providers and 
-    # increase it back again to give providers down the list lower priority  
+    # Decrease the start metric so as to increase it as we loop through the providers and 
+    # increase it back again to give providers down the list lower priority thus a higher metric
     current_metric = config.START_METRIC - 1
     for p in reordered_providers_list:
         # As we go near list end, priority decreases, remenber, the higher the number, the lower the priority
@@ -91,7 +85,7 @@ def last_failed_checks_count(provider_id: str, result_set: ProvidersTestResultMa
     results = result_set[provider_id]
     count = 0
 
-    # Reverse the list to loop backwards through it
+    # Reverse the list to loop backwards through it, as new values are appended and not prepended to the list
     for r in reversed(results):
         # Increase count on every False encoutered
         if r is False:
@@ -103,8 +97,9 @@ def last_consecutive_value_count(provider_id: str, value: bool = True, result_se
     """Retrieve the successive count for a value inside this provider's check result array"""
     results = result_set[provider_id]
     count = 0
+    # Reverse the list to loop backwards through it, as new values are appended and not prepended to the list
     for r in reversed(results):
-        if r is value:
+        if r is not value:
             break
         count += 1
     return count
@@ -126,9 +121,14 @@ def is_provider_reliable(provider_id: str) ->  bool:
         number of recent successive succeeded checks is greater than the configured minimum if consecutive succeeded checks 
         then the provider is considered reliable
     """
-    return len(config.result_set[provider_id]) > 0 and \
-    last_failed_checks_count(provider_id) <= config.MIN_FAILED_CHECKS and \
-    last_consecutive_succeeded_checks_count(provider_id) > config.MIN_CONSCUTIVE_SUCCEEDED_CHECKS
+    has_results: bool = len(config.result_set[provider_id]) > 0
+    failed_count: int = last_failed_checks_count(provider_id)
+    success_count: int = last_consecutive_succeeded_checks_count(provider_id)
+    print(f"{provider_id=} {failed_count=}, {success_count=}")
+
+    return has_results and \
+    failed_count <= config.MAX_FAILED_CHECKS and \
+    success_count > config.MIN_CONSECUTIVE_SUCCEEDED_CHECKS
 
 
 def next_reliabale_provider() -> Provider:
@@ -137,9 +137,11 @@ def next_reliabale_provider() -> Provider:
     for p in config.providers:
         if is_provider_reliable(p.id):
             return p
-        
+
+    first_provider = config.providers[0]
+    print(f"No reliable provider found: using first provider ({first_provider.id}).")
     # If no provider is found to be reliable return the first one
-    return config.providers[0]
+    return first_provider
 
 
 def add_routing_table_and_rule(network: str, interface_name: str, interface_address: str, gateway: str, table_name: str):
@@ -152,10 +154,10 @@ def add_routing_table_and_rule(network: str, interface_name: str, interface_addr
     run(cmd, **config.DEFAULT_SHELL_OPTIONS)
 
 
-def switch_provider(provider: Provider):
+def switch_to_provider(provider_id: str):
     """Delete all default routes and then sets the provider as the main one"""
     delete_default_routes()
-    set_main_provider(provider.id)
+    set_main_provider(provider_id)
 
 
 def sticky_provider_id() -> str:
@@ -163,7 +165,7 @@ def sticky_provider_id() -> str:
     return open(config.STICKY_PROVIDER_FILENAME).readline().strip()
 
 
-def run_provider_reliability_tests():
+def run_provider_reliability_checks():
     """Run reliabilty checks on all providers and store check results"""
     
     # Loop through providers list
@@ -177,13 +179,18 @@ def run_provider_reliability_tests():
 
 
 def enforce_best_provider_use(current_provider_id: str):
-    """Make sure the first or most prefered reliable provider is in use"""
+    """Make sure the first or most reliable provider is in use"""
 
     # Get the most reliable provider based on previous check results
     normal_current_provider = next_reliabale_provider()
+    result_set = ""
+    for k in config.result_set:
+        result_set += f"{k}: {''.join(str(int(v)) for v in config.result_set[k])}\n"
     
-    print(f"{config.result_set=}, {current_provider_id=}, {normal_current_provider=}")
+    print(f"{result_set}")
+    print(f"current_provider_id: {current_provider_id}")
+    print(f"normal_current_provider_id: {normal_current_provider.id}")
     
-    # If we're actually not using that provider then euuuuuh, switch on it
+    # If we're actually not using that provider then, switch on it
     if normal_current_provider.id != current_provider_id:
-        switch_provider(normal_current_provider)
+        switch_to_provider(normal_current_provider.id)

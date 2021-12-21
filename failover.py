@@ -24,15 +24,16 @@ def main():
                 # Check if the current provider is not already the sticky one to avoid performing useless operations
                 if provider_id != current_provider_id:
                     sticky_provider = get_provider_by_id(provider_id)
-                    switch_provider(sticky_provider)
-                    print(f"Forcing {sticky_provider=} as main provider")
-                
+                    switch_to_provider(sticky_provider.id)
+                    print(f"Forcing '{sticky_provider.id}' as main provider")
+
                 # Skip the remaining code as we explicitly want to use this provider
                 continue
         except Exception as e:
+            # Exception might happen because the sticky provider file is not readable for eg
             print(f"{e=}")
 
-        run_provider_reliability_tests()
+        run_provider_reliability_checks()
             
         enforce_best_provider_use(current_provider_id)
 

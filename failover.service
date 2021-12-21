@@ -1,19 +1,18 @@
 [Unit]
-Description=Id2real failover service
-#Documentation=https://id2real.com/failover
-After=network.target auditd.service
+Description=Failover service
+Documentation=https://github.com/davidassigbi/failover
+After=network.target
 
 [Service]
-# /home/david/miniconda3/envs/python-3.9/bin/python 
-WorkingDirectory=/etc/id2real_failover
-ExecStartPre=/usr/bin/env python3.9 -u /etc/id2real_failover/setup.py
-ExecStart=/usr/bin/env python3.9 -u /etc/id2real_failover/failover.py
+WorkingDirectory=/etc/failover
+ExecStartPre=/usr/bin/env python3.9 -u /etc/failover/setup.py
+ExecStart=/usr/bin/env python3.9 -u /etc/failover/failover.py
 Restart=on-failure
 ###
-#ExecStopPost=/etc/id2real_failover/teardown.sh
+#ExecStopPost=/etc/failover/teardown.sh
 #ExecReload=/bin/kill -1 -- $MAINPID
-ExecStop=/usr/bin/env python3.9 -u /etc/id2real_failover/teardown.py && /bin/kill -- $MAINPID
-ExecReload=/usr/bin/env python3.9 -u /etc/id2real_failover/teardown.py && /bin/kill -- $MAINPID
+ExecStop=/usr/bin/env python3.9 -u /etc/failover/teardown.py && /bin/kill -- $MAINPID
+ExecReload=/usr/bin/env python3.9 -u /etc/failover/teardown.py && /bin/kill -- $MAINPID
 #TimeoutStopSec=5
 #KillMode=process
 Type=simple

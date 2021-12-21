@@ -2,20 +2,20 @@
 import collections
 from models import *
 
-CHECK_INTERVAL = 5
+CHECK_INTERVAL = 1
 START_METRIC = 100
 MAX_STORED_TEST_RESULT_COUNT = 50
 DEFAULT_SHELL_OPTIONS = {"shell": True,
                          "text": True, "close_fds": True, "timeout": 5}
 
-MIN_FAILED_CHECKS = 0
-MIN_CONSCUTIVE_SUCCEEDED_CHECKS = 1
+MAX_FAILED_CHECKS = 10
+MIN_CONSECUTIVE_SUCCEEDED_CHECKS = 1
 STICKY_PROVIDER_FILENAME = "sticky.provider"
 
 providers: list[Provider] = [
-    Provider(interface_name="eth0", ipv4_address="10.10.10.1",
+    Provider(interface_name="eth1", ipv4_address="10.10.10.1",
              network="10.10.10.0/24", gateway="10.10.10.254", rt_table_name="R1", rt_table_id=1),
-    Provider(interface_name="eth1", ipv4_address="10.10.10.2",
+    Provider(interface_name="eth2", ipv4_address="10.10.10.2",
              network="10.10.10.0/24", gateway="10.10.10.254", rt_table_name="R2", rt_table_id=2)
 ]
 

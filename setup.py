@@ -16,7 +16,7 @@ def main():
             interface_address=p.ipv4_address,
             gateway=p.gateway,
             table_name=p.rt_table_name)
-    u.set_main_provider(providers[0])
+    u.set_main_provider(providers[0].id)
 
 
 if __name__ == "__main__":
