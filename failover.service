@@ -8,15 +8,9 @@ WorkingDirectory=/etc/failover
 ExecStartPre=/usr/bin/env python3.9 -u /etc/failover/setup.py
 ExecStart=/usr/bin/env python3.9 -u /etc/failover/failover.py
 Restart=on-failure
-###
-#ExecStopPost=/etc/failover/teardown.sh
-#ExecReload=/bin/kill -1 -- $MAINPID
 ExecStop=/usr/bin/env python3.9 -u /etc/failover/teardown.py && /bin/kill -- $MAINPID
 ExecReload=/usr/bin/env python3.9 -u /etc/failover/teardown.py && /bin/kill -- $MAINPID
-#TimeoutStopSec=5
-#KillMode=process
 Type=simple
-###
 
 [Install]
 WantedBy=multi-user.target
