@@ -3,4 +3,4 @@ __pycache__
 tests/Python*
 tests/*.sh
 tests/*failover*
-*/**.bkp
+*/**bkp
