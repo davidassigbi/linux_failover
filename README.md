@@ -1,7 +1,7 @@
-# Two-Gateway soft and almost transparent failover
+# Multi-Gateway soft and ~almost transparent failover
 
 ## What is it ?
-This is actually a set of scripts and service to perform what i call a soft failover from a main gateway to another with the paticularty that one can have the two gateways have the same IP address. This is actually very usefull in case you can not change that gateway LAN IP address.
+This is actually a set of scripts and service to perform what I call a soft failover from a main gateway to another with the paticularty that one can have all gateways have the same IP address. This is actually very usefull in case you can not change that gateway LAN IP address.
 
 ## How it works ?
 It is actually quite simple and maybe not the best way to do it but for me it worked like a charm.
