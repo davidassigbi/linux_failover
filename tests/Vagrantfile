@@ -25,14 +25,14 @@ Vagrant.configure("2") do |config|
       v.name = "isp1_router"
     end
 
-    isp1.vm.network "private_network", virtualbox__intnet: "isp1", ip: "10.10.10.254"
+    isp1.vm.network "private_network", virtualbox__intnet: "isp1", ip: "10.10.1.254"
   end
 
   config.vm.define "isp2" do |isp2|
     isp2.vm.box = "debian/contrib-buster64"
     isp2.vm.hostname = "isp2"
 
-    isp2.vm.network "private_network", virtualbox__intnet: "isp2", ip: "10.10.10.254"
+    isp2.vm.network "private_network", virtualbox__intnet: "isp2", ip: "10.10.2.254"
 
     isp2.vm.provision "config_routing", type: "shell", run: "always" do |s|
       s.inline = ISP_ROUTING_CONFIG_SCRIPT
@@ -53,8 +53,8 @@ Vagrant.configure("2") do |config|
     # Sync the actual project source directory
     firewall.vm.synced_folder "../", "/home/vagrant/failover"
 
-    firewall.vm.network "private_network", virtualbox__intnet: "isp1", ip: "10.10.10.1"
-    firewall.vm.network "private_network", virtualbox__intnet: "isp2", ip: "10.10.10.2"
+    firewall.vm.network "private_network", virtualbox__intnet: "isp1", ip: "10.10.1.1"
+    firewall.vm.network "private_network", virtualbox__intnet: "isp2", ip: "10.10.2.2"
 
     firewall.vm.network "private_network", virtualbox__intnet: "company", ip: "192.168.0.1"
 
@@ -83,7 +83,7 @@ Vagrant.configure("2") do |config|
     # Remove vagrant default route to have as much control as possible over the routing table
     firewall.vm.provision "del_vagrant_default_route", type: "shell", run: "always" do |s|
       s.inline = <<-SCRIPT
-        ip route del default dev eth0
+        ip route del default dev eth0 2> null
       SCRIPT
     end
 
