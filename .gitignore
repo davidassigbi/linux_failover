@@ -4,3 +4,4 @@ tests/Python*
 tests/*.sh
 tests/*failover*
 */**bkp
+.directory
