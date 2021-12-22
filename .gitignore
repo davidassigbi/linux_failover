@@ -1,0 +1,7 @@
+__pycache__
+.vagrant
+tests/Python*
+tests/*.sh
+tests/*failover*
+*/**bkp
+.directory

@@ -1,0 +1,147 @@
+ISP_ROUTING_CONFIG_SCRIPT = <<-SCRIPT
+  echo "nameserver 8.8.8.8" > /etc/resolv.conf
+  iptables --table filter --flush
+  iptables --table nat --flush
+  iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
+  iptables --table filter --append FORWARD --in-interface eth1 -j ACCEPT
+  sed -E -i.bkp 's/.*(net.ipv4.ip_forward=1)$/\\1/' /etc/sysctl.conf
+  sysctl -p /etc/sysctl.conf
+SCRIPT
+Vagrant.configure("2") do |config|
+  # config.vm.provision "shell", inline: "apt-get update && apt-get install -y iptables-persistent"
+
+  config.vm.define "isp1" do |isp1|
+    isp1.vm.box = "debian/contrib-buster64"
+    isp1.vm.hostname = "isp1"
+
+    isp1.vm.provision "config_routing", type: "shell", run: "always" do |s|
+      s.inline = ISP_ROUTING_CONFIG_SCRIPT
+    end
+
+    isp1.vm.provider "virtualbox" do |v|
+      v.linked_clone = true
+      v.memory = 512
+      v.cpus = 1
+      v.name = "isp1_router"
+    end
+
+    isp1.vm.network "private_network", virtualbox__intnet: "isp1", ip: "10.10.1.254"
+  end
+
+  config.vm.define "isp2" do |isp2|
+    isp2.vm.box = "debian/contrib-buster64"
+    isp2.vm.hostname = "isp2"
+
+    isp2.vm.network "private_network", virtualbox__intnet: "isp2", ip: "10.10.2.254"
+
+    isp2.vm.provision "config_routing", type: "shell", run: "always" do |s|
+      s.inline = ISP_ROUTING_CONFIG_SCRIPT
+    end
+
+    isp2.vm.provider "virtualbox" do |v|
+      v.linked_clone = true
+      v.memory = 512
+      v.cpus = 1
+      v.name = "isp2_router"
+    end
+  end
+
+  config.vm.define "firewall" do |firewall|
+    firewall.vm.box = "debian/contrib-buster64"
+    firewall.vm.hostname = "firewall"
+
+    # Sync the actual project source directory
+    firewall.vm.synced_folder "../", "/home/vagrant/failover"
+
+    firewall.vm.network "private_network", virtualbox__intnet: "isp1", ip: "10.10.1.1"
+    firewall.vm.network "private_network", virtualbox__intnet: "isp2", ip: "10.10.2.2"
+
+    firewall.vm.network "private_network", virtualbox__intnet: "company", ip: "192.168.0.1"
+
+
+    # Install python3.9 , minimum supported version for the failver script to work
+    firewall.vm.provision "install_python39", type: "shell", run: "once" do |s|
+      s.inline = <<-SCRIPT
+        # https://linuxize.com/post/how-to-install-python-3-9-on-debian-10/
+        mkdir -p /tmp/python3.9
+        cd /tmp/python3.9
+        wget https://www.python.org/ftp/python/3.9.9/Python-3.9.9.tgz
+        tar -xvf Python-3.9.9.tgz
+        cd Python-3.9.9
+        ls -lash
+        apt-get update
+        apt-get install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev libreadline-dev libffi-dev curl libbz2-dev
+        ./configure --enable-optimizations
+        make -j 2
+        make altinstall
+        python3.9 -m pip install icmplib
+        # cd /tmp
+        # rm -rf /tmp/python3.9
+      SCRIPT
+    end
+
+    # Remove vagrant default route to have as much control as possible over the routing table
+    firewall.vm.provision "del_vagrant_default_route", type: "shell", run: "always" do |s|
+      s.inline = <<-SCRIPT
+        ip route del default dev eth0 2> null
+      SCRIPT
+    end
+
+    # Setup basic routing to make the firewall actuall behave like a router/gateway
+    firewall.vm.provision "config_routing", type: "shell", run: "always"do |s|
+      s.inline = <<-SCRIPT
+        echo "nameserver 8.8.8.8" > /etc/resolv.conf
+        iptables --table filter --flush
+        iptables --table nat --flush
+        iptables --table nat --append POSTROUTING --out-interface eth1 -j MASQUERADE
+        iptables --table nat --append POSTROUTING --out-interface eth2 -j MASQUERADE
+        iptables --table filter --append FORWARD --in-interface eth3 -j ACCEPT
+        sed -E -i.bkp 's/.*(net.ipv4.ip_forward=1)$/\\1/' /etc/sysctl.conf
+        sysctl -p /etc/sysctl.conf
+      SCRIPT
+    end
+
+    firewall.vm.provision "install_failover", type: "shell", run: "never" do |s|
+      s.inline = <<-SCRIPT
+        cd /home/vagrant/failover
+        python3.9 install.py
+      SCRIPT
+    end
+
+
+    firewall.vm.provider "virtualbox" do |v|
+      v.linked_clone = true
+      v.memory = 512
+      v.cpus = 2
+      v.name = "firewall"
+    end
+  end
+
+
+  config.vm.define "host1" do |host1|
+    host1.vm.box = "debian/contrib-buster64"
+    host1.vm.hostname = "host1"
+
+    host1.vm.network "private_network", virtualbox__intnet: "company", ip: "192.168.0.3"
+
+    # Remove vagrant default route to force using our predefined
+    host1.vm.provision "del_vagrant_default_route", type: "shell", run: "always" do |s|
+      s.inline = "ip route del default dev eth0"
+    end
+
+    host1.vm.provision "config_routing", type: "shell", run: "always" do |s|
+      s.inline = <<-SCRIPT
+        echo "nameserver 8.8.8.8" > /etc/resolv.conf
+        ip route del default dev eth0
+        ip route add default via 192.168.0.1 dev eth1 metric 100
+      SCRIPT
+    end
+
+    host1.vm.provider "virtualbox" do |v|
+      v.linked_clone = true
+      v.memory = 512
+      v.cpus = 1
+      v.name = "host1"
+    end
+  end
+end
