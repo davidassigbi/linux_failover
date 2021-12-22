@@ -7,10 +7,7 @@ This is a set of scripts and service to perform what I call a soft failover from
 It is actually quite simple and maybe not the best way to do it but for me it worked like a charm.
 Basically you have a configuration file in which you define all your providers and tests that you want to run to check whether a provider is healthy(has internet access).
 The scripts then assume that an interface/provider is healthy once a check is successfull through that interface.
-The checks are run at a user defined period against every single provider present on your linux firewall/router and these two things happen:
-- Once a check fails through the current main provider, the program will look for the next provider that is reliable. And once it finds one, it sets it as the new main provider to ensure continued connectivity.
-
-- It continues pinging the main interface and ASA the ping gets succesfull it switches back to the primary interface 
+The checks are run at a user defined period against every provider present on your linux firewall/router and if a check fails through the current main provider, the program will look for the next provider that is reliable. And once it finds one, it sets it as the new main provider to ensure continued connectivity.
 
 The actual decision about which routes should the packets flow through is controlled by `linux route metrics`. Those allow to have multiple default routes and only packets that don't go to a specific interface will get handled by the metric decision made by the kernel.
 
@@ -21,8 +18,8 @@ By default the script use a ping probe as health check. Advantage of ping as hea
 - If it is an OS issue for example, then the ping will still be not successful and you can do whatever you want
 
 ## Configuration
-There is only one configuration file for the script: config.py.
-And inside that file all parameters are self explanatory, seriously they are, but here are they once again:
+There is only one configuration file for the script: `config.py`.
+And inside that file all parameters are self explanatory, seriously they are, but here are some description:
 
 - `CHECK_INTERVAL = 5` : A floating point number to define the interval(in seconds) between two health checks.
 
@@ -45,8 +42,8 @@ And inside that file all parameters are self explanatory, seriously they are, bu
 ## Installation
 Once you are happy with your configuration run `$ sudo install.py` which will do the following things:
 - First, try to uninstall any previous version of the program
-- Copy the program files to the destination folder (/etc/failover)
-- Add entries in your /etc/iproute2/rt_tables to perform policy based routing later
+- Copy the program files to the destination folder (`/etc/failover`)
+- Add entries in your `/etc/iproute2/rt_tables` to perform policy based routing later
 - Make those python files executable
 - Install the service and launch it right away
 
