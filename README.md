@@ -3,6 +3,10 @@
 ## What is it ?
 This is a set of scripts and service to perform what I call a soft failover from a main gateway to another with the particularty that one can have all gateways have the "same" IP address. This is actually very usefull in case you can not change that gateway LAN IP address (maybe because the provider doesn't allow to do so).
 
+You might want to chec out a demo video by clicking the Youtube link below <br/><br/>
+[![Demo video](https://img.youtube.com/vi/pOl9F_go5m0/maxresdefault.jpg)](https://www.youtube.com/embed/pOl9F_go5m0?start=602)
+<br/><br/>
+
 ## How does it work ?
 It is actually quite simple and maybe not the best way to do it but for me it worked like a charm.
 Basically you have a configuration file in which you define all your providers and tests that you want to run to check whether a provider is healthy(has internet access).
@@ -57,4 +61,3 @@ It is a python script so you can go inside and customize it like removing steps 
 TODO:
 - change the base boxes from Debian to a box already having every dependency packaged (Maybe I will create a custom base box).
 - Migrate the provisioning scripts from the Vaagrantfile to Ansible.
-
