@@ -12,16 +12,13 @@ ProvidersTestResultMap = dict[str, collections.deque[bool]]
 
 @dataclass
 class Provider:
+    id: str = ""
     interface_name: str = "eth0"
     ipv4_address: str = "10.10.10.1"
     gateway: str = "10.10.10.254"
     network: str = "10.10.10.0/24"
     rt_table_name: str = "R1"
     rt_table_id: int = 1
-    
-    @property
-    def id(self):
-        return self.interface_name
 
 
 @dataclass
