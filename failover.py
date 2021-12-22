@@ -37,5 +37,8 @@ def main():
             
         enforce_best_provider_use(current_provider_id)
 
+        # Print an empty line to separate logs
+        print("-")
+
 if __name__ == "__main__":
     main()

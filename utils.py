@@ -124,7 +124,7 @@ def is_provider_reliable(provider_id: str) ->  bool:
     has_results: bool = len(config.result_set[provider_id]) > 0
     failed_count: int = last_failed_checks_count(provider_id)
     success_count: int = last_consecutive_succeeded_checks_count(provider_id)
-    print(f"{provider_id=} {failed_count=}, {success_count=}")
+    # print(f"{provider_id=} {failed_count=}, {success_count=}")
 
     return has_results and \
     failed_count <= config.MAX_FAILED_CHECKS and \
@@ -139,8 +139,8 @@ def next_reliabale_provider() -> Provider:
             return p
 
     first_provider = config.providers[0]
-    print(f"No reliable provider found: using first provider ({first_provider.id}).")
-    # If no provider is found to be reliable return the first one
+    print(f"No reliable provider: using first provider ({first_provider.id}).")
+    # If no provider is reliable return the first one
     return first_provider
 
 
@@ -188,8 +188,8 @@ def enforce_best_provider_use(current_provider_id: str):
         result_set += f"{k}: {''.join(str(int(v)) for v in config.result_set[k])}\n"
     
     print(f"{result_set}")
-    print(f"current_provider_id: {current_provider_id}")
-    print(f"normal_current_provider_id: {normal_current_provider.id}")
+    # print(f"current_provider_id: {current_provider_id}")
+    # print(f"normal_current_provider_id: {normal_current_provider.id}")
     
     # If we're actually not using that provider then, switch on it
     if normal_current_provider.id != current_provider_id:
