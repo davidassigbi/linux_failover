@@ -51,4 +51,10 @@ Once you are happy with your configuration run `$ sudo install.py` which will do
 ## Uninstallation
 If you want to remove the program from your system, you can run `$ sudo /etc/failover/uninstall.py` and everything realted to it should be gone.
 
-PS: It is a python script so you can go inside and customize it like removing steps you don't want. Although I don't really recommend altering the program too much, if you're sure about what you're doing then feel FREE to tweak it as much as you want ;).
+## What else ?
+It is a python script so you can go inside and customize it like removing steps you don't want. Although I don't really recommend altering the program too much, if you're sure about what you're doing then feel FREE to tweak it as much as you want ;).
+
+TODO:
+- change the base boxes from Debian to a box already having every dependency packaged (Maybe I will create a custom base box).
+- Migrate the provisioning scripts from the Vaagrantfile to Ansible.
+
