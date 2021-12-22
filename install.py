@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.9
 import os
-from config import DEFAULT_SHELL_OPTIONS, providers
+from config import DEFAULT_SHELL_OPTIONS, providers, STICKY_PROVIDER_FILENAME
 from subprocess import run
 
 # First of all cleanup every config before installing
@@ -10,13 +10,15 @@ systemctl stop failover.service
 rm /etc/systemd/system/failover.service
 systemctl daemon-reload
 systemctl reset-failed
+/etc/teardown.py
 rm -rf /etc/failover/*
-{os.getcwd()}/teardown.py"""
+"""
 run(cmd,**DEFAULT_SHELL_OPTIONS)
 
 # Copy files over and make them executables
 cmd = f"""mkdir -p /etc/failover
 cp {os.getcwd()}/*.py /etc/failover/
+touch /etc/failover/{STICKY_PROVIDER_FILENAME}
 chmod +x /etc/failover/*"""
 for c in cmd.splitlines():
 	run(c,**DEFAULT_SHELL_OPTIONS)
@@ -38,6 +40,5 @@ systemctl daemon-reload
 systemctl start failover.service"""
 for c in cmd.splitlines():
 	run(c, **DEFAULT_SHELL_OPTIONS)
- 
+
 run("systemctl is-enabled failover.service", shell=True)
-run("journalctl -f -u failover.service", shell=True)
